@@ -1,0 +1,32 @@
+version: '3.8'
+services:
+  dev-db:
+    image: postgis/postgis:17-3.4-alpine
+    container_name: restiful-db-server
+    ports:
+      - 5436:5432
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: 123
+      POSTGRES_DB: restiful
+    volumes:
+      - ./init-postgis.sql:/docker-entrypoint-initdb.d/init-postgis.sql
+    networks:
+      - restiful-network
+
+  test-db:
+    image: postgis/postgis:17-3.4-alpine
+    container_name: restiful-test-db-server
+    ports:
+      - 5437:5432
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: 123
+      POSTGRES_DB: restiful
+    volumes:
+      - ./init-postgis.sql:/docker-entrypoint-initdb.d/init-postgis.sql
+    networks:
+      - restiful-network
+
+networks:
+  restiful-network:
