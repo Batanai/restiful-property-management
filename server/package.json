@@ -8,7 +8,7 @@
   "scripts": {
     "prisma:dev:deploy": "prisma migrate deploy",
     "prisma:generate": "prisma generate",
-    "postprisma:generate": "shx cp -r node_modules/.prisma/client/*.d.ts ../client/src/types/",
+    "postprisma:generate": "shx cp node_modules/.prisma/client/index.d.ts ../client/src/types/prismaTypes.d.ts",
     "db:dev:rm": "docker compose rm dev-db -s -f -v",
     "db:dev:up": "docker compose up dev-db -d",
     "db:dev:restart": "yarn db:dev:rm && yarn db:dev:up && sleep 1 && yarn prisma:dev:deploy",

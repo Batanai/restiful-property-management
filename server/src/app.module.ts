@@ -2,6 +2,8 @@ import { Module } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { ConfigModule } from '@nestjs/config';
+import { TenantModule } from './tenant/tenant.module';
+import { ManagerModule } from './manager/manager.module';
 
 @Module({
   imports: [
@@ -9,6 +11,8 @@ import { ConfigModule } from '@nestjs/config';
       isGlobal: true,
       envFilePath: process.env.NODE_ENV === 'production' ? '.env.production' : '.env',
     }),
+    TenantModule,
+    ManagerModule,
   ],
   controllers: [AppController],
   providers: [AppService],
