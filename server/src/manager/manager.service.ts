@@ -11,6 +11,12 @@ export interface CreateManagerDto {
   phoneNumber: string;
 }
 
+export interface UpdateManagerDto {
+  name?: string;
+  email?: string;
+  phoneNumber?: string;
+}
+
 @Injectable()
 export class ManagerService {
   private readonly logger = new Logger(ManagerService.name);
@@ -68,6 +74,31 @@ export class ManagerService {
 
       this.logger.error(`Failed to create manager with cognitoId ${data.cognitoId}`, error.stack);
       throw new InternalServerErrorException('Failed to create manager');
+    }
+  }
+
+  async updateManager(cognitoId: string, data: UpdateManagerDto): Promise<Manager> {
+    try {
+      // First check if manager exists
+      await this.getManagerByCognitoId(cognitoId);
+
+      const manager = await prisma.manager.update({
+        where: { cognitoId },
+        data: {
+          ...(data.name && { name: data.name }),
+          ...(data.email && { email: data.email }),
+          ...(data.phoneNumber && { phoneNumber: data.phoneNumber }),
+        },
+      });
+
+      return manager;
+    } catch (error) {
+      if (error instanceof NotFoundException) {
+        throw error;
+      }
+
+      this.logger.error(`Failed to update manager with cognitoId ${cognitoId}`, error.stack);
+      throw new InternalServerErrorException('Failed to update manager');
     }
   }
 }

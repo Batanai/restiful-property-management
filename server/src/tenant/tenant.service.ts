@@ -11,6 +11,12 @@ export interface CreateTenantDto {
   phoneNumber: string;
 }
 
+export interface UpdateTenantDto {
+  name?: string;
+  email?: string;
+  phoneNumber?: string;
+}
+
 @Injectable()
 export class TenantService {
   private readonly logger = new Logger(TenantService.name);
@@ -74,6 +80,31 @@ export class TenantService {
 
       this.logger.error(`Failed to create tenant with cognitoId ${data.cognitoId}`, error.stack);
       throw new InternalServerErrorException('Failed to create tenant');
+    }
+  }
+
+  async updateTenant(cognitoId: string, data: UpdateTenantDto): Promise<Tenant> {
+    try {
+      // First check if tenant exists
+      await this.getTenantByCognitoId(cognitoId);
+
+      const tenant = await prisma.tenant.update({
+        where: { cognitoId },
+        data: {
+          ...(data.name && { name: data.name }),
+          ...(data.email && { email: data.email }),
+          ...(data.phoneNumber && { phoneNumber: data.phoneNumber }),
+        },
+      });
+
+      return tenant;
+    } catch (error) {
+      if (error instanceof NotFoundException) {
+        throw error;
+      }
+
+      this.logger.error(`Failed to update tenant with cognitoId ${cognitoId}`, error.stack);
+      throw new InternalServerErrorException('Failed to update tenant');
     }
   }
 }

@@ -1,6 +1,6 @@
-import { Controller, Get, Post, Body, Param, Req, HttpStatus, NotFoundException } from '@nestjs/common';
+import { Controller, Get, Post, Patch, Body, Param, Req, HttpStatus, NotFoundException } from '@nestjs/common';
 import { Request } from 'express';
-import { ManagerService, CreateManagerDto } from './manager.service';
+import { ManagerService, CreateManagerDto, UpdateManagerDto } from './manager.service';
 import { createUser } from '../common/utils/user.utils';
 
 @Controller('manager')
@@ -54,6 +54,24 @@ export class ManagerController {
       return {
         status: HttpStatus.CREATED,
         message: 'Manager created successfully',
+        data: manager,
+      };
+    } catch (error) {
+      // Re-throw to let NestJS exception filter handle it
+      throw error;
+    }
+  }
+
+  @Patch(':cognitoId')
+  async updateManager(
+    @Param('cognitoId') cognitoId: string,
+    @Body() updateManagerDto: UpdateManagerDto,
+  ) {
+    try {
+      const manager = await this.managerService.updateManager(cognitoId, updateManagerDto);
+      return {
+        status: HttpStatus.OK,
+        message: 'Manager updated successfully',
         data: manager,
       };
     } catch (error) {

@@ -1,6 +1,6 @@
-import { Controller, Get, Post, Body, Param, Req, HttpStatus, HttpCode, NotFoundException } from '@nestjs/common';
+import { Controller, Get, Post, Patch, Body, Param, Req, HttpStatus, HttpCode, NotFoundException } from '@nestjs/common';
 import { Request } from 'express';
-import { TenantService, CreateTenantDto } from './tenant.service';
+import { TenantService, CreateTenantDto, UpdateTenantDto } from './tenant.service';
 import { createUser } from '../common/utils/user.utils';
 
 @Controller('tenant')
@@ -54,6 +54,24 @@ export class TenantController {
       return {
         status: HttpStatus.CREATED,
         message: 'Tenant created successfully',
+        data: tenant,
+      };
+    } catch (error) {
+      // Re-throw to let NestJS exception filter handle it
+      throw error;
+    }
+  }
+
+  @Patch(':cognitoId')
+  async updateTenant(
+    @Param('cognitoId') cognitoId: string,
+    @Body() updateTenantDto: UpdateTenantDto,
+  ) {
+    try {
+      const tenant = await this.tenantService.updateTenant(cognitoId, updateTenantDto);
+      return {
+        status: HttpStatus.OK,
+        message: 'Tenant updated successfully',
         data: tenant,
       };
     } catch (error) {
