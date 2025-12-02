@@ -5,6 +5,8 @@ import { ConfigModule } from '@nestjs/config';
 import { TenantModule } from './tenant/tenant.module';
 import { ManagerModule } from './manager/manager.module';
 import { PropertyModule } from './property/property.module';
+import { LeaseModule } from './lease/lease.module';
+import { ApplicationModule } from './application/application.module';
 
 @Module({
   imports: [
@@ -15,6 +17,8 @@ import { PropertyModule } from './property/property.module';
     TenantModule,
     ManagerModule,
     PropertyModule,
+    LeaseModule,
+    ApplicationModule,
   ],
   controllers: [AppController],
   providers: [AppService],
