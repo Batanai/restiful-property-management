@@ -72,6 +72,7 @@
     "@types/helmet": "^4.0.0",
     "@types/jest": "^29.5.14",
     "@types/morgan": "^1.9.10",
+    "@types/multer": "^2.0.0",
     "@types/node": "^22.10.7",
     "@types/pg": "^8.15.6",
     "@types/supertest": "^6.0.2",

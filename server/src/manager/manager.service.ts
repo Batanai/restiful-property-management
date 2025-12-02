@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException, InternalServerErrorException, ConflictException, Logger } from '@nestjs/common';
 import { PrismaClient, Manager } from '@prisma/client';
 import { Prisma } from '@prisma/client';
+import { wktToGeoJSON } from '@terraformer/wkt';
 
 const prisma = new PrismaClient();
 
@@ -99,6 +100,47 @@ export class ManagerService {
 
       this.logger.error(`Failed to update manager with cognitoId ${cognitoId}`, error.stack);
       throw new InternalServerErrorException('Failed to update manager');
+    }
+  }
+
+  async getManagerProperties(cognitoId: string): Promise<any[]> {
+    try {
+      const properties = await prisma.property.findMany({
+        where: { managerCognitoId: cognitoId },
+        include: {
+          location: true,
+        },
+      });
+
+      const propertiesWithFormattedLocation = await Promise.all(
+        properties.map(async (property) => {
+          const coordinates: { coordinates: string }[] = await prisma.$queryRaw`
+            SELECT ST_AsText(coordinates) as coordinates 
+            FROM "Location" 
+            WHERE id = ${property.location.id}
+          `;
+
+          const geoJSON: any = wktToGeoJSON(coordinates[0]?.coordinates || '');
+          const longitude = geoJSON.coordinates[0];
+          const latitude = geoJSON.coordinates[1];
+
+          return {
+            ...property,
+            location: {
+              ...property.location,
+              coordinates: {
+                longitude,
+                latitude,
+              },
+            },
+          };
+        })
+      );
+
+      return propertiesWithFormattedLocation;
+    } catch (error) {
+      this.logger.error(`Failed to retrieve manager properties for cognitoId ${cognitoId}`, error.stack);
+      throw new InternalServerErrorException('Failed to retrieve manager properties');
     }
   }
 }

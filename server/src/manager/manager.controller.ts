@@ -79,4 +79,19 @@ export class ManagerController {
       throw error;
     }
   }
+
+  @Get(':cognitoId/properties')
+  async getManagerProperties(@Param('cognitoId') cognitoId: string) {
+    try {
+      const properties = await this.managerService.getManagerProperties(cognitoId);
+      return {
+        status: HttpStatus.OK,
+        message: 'Manager properties retrieved successfully',
+        data: properties,
+      };
+    } catch (error) {
+      // Re-throw to let NestJS exception filter handle it
+      throw error;
+    }
+  }
 }

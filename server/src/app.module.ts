@@ -4,6 +4,7 @@ import { AppService } from './app.service';
 import { ConfigModule } from '@nestjs/config';
 import { TenantModule } from './tenant/tenant.module';
 import { ManagerModule } from './manager/manager.module';
+import { PropertyModule } from './property/property.module';
 
 @Module({
   imports: [
@@ -13,6 +14,7 @@ import { ManagerModule } from './manager/manager.module';
     }),
     TenantModule,
     ManagerModule,
+    PropertyModule,
   ],
   controllers: [AppController],
   providers: [AppService],

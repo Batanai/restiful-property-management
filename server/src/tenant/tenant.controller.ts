@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Patch, Body, Param, Req, HttpStatus, HttpCode, NotFoundException } from '@nestjs/common';
+import { Controller, Get, Post, Patch, Delete, Body, Param, Req, HttpStatus, HttpCode, NotFoundException, ParseIntPipe } from '@nestjs/common';
 import { Request } from 'express';
 import { TenantService, CreateTenantDto, UpdateTenantDto } from './tenant.service';
 import { createUser } from '../common/utils/user.utils';
@@ -72,6 +72,57 @@ export class TenantController {
       return {
         status: HttpStatus.OK,
         message: 'Tenant updated successfully',
+        data: tenant,
+      };
+    } catch (error) {
+      // Re-throw to let NestJS exception filter handle it
+      throw error;
+    }
+  }
+
+  @Get(':cognitoId/residences')
+  async getCurrentResidences(@Param('cognitoId') cognitoId: string) {
+    try {
+      const residences = await this.tenantService.getCurrentResidences(cognitoId);
+      return {
+        status: HttpStatus.OK,
+        message: 'Current residences retrieved successfully',
+        data: residences,
+      };
+    } catch (error) {
+      // Re-throw to let NestJS exception filter handle it
+      throw error;
+    }
+  }
+
+  @Post(':cognitoId/favorites/:propertyId')
+  async addFavoriteProperty(
+    @Param('cognitoId') cognitoId: string,
+    @Param('propertyId', ParseIntPipe) propertyId: number,
+  ) {
+    try {
+      const tenant = await this.tenantService.addFavoriteProperty(cognitoId, propertyId);
+      return {
+        status: HttpStatus.OK,
+        message: 'Favorite property added successfully',
+        data: tenant,
+      };
+    } catch (error) {
+      // Re-throw to let NestJS exception filter handle it
+      throw error;
+    }
+  }
+
+  @Delete(':cognitoId/favorites/:propertyId')
+  async removeFavoriteProperty(
+    @Param('cognitoId') cognitoId: string,
+    @Param('propertyId', ParseIntPipe) propertyId: number,
+  ) {
+    try {
+      const tenant = await this.tenantService.removeFavoriteProperty(cognitoId, propertyId);
+      return {
+        status: HttpStatus.OK,
+        message: 'Favorite property removed successfully',
         data: tenant,
       };
     } catch (error) {
