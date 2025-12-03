@@ -6,7 +6,6 @@ import {
   Logger,
 } from '@nestjs/common';
 import {
-  PrismaClient,
   Property,
   PropertyType,
   Amenity,
@@ -17,8 +16,7 @@ import { Prisma } from '@prisma/client';
 import { wktToGeoJSON } from '@terraformer/wkt';
 import { uploadFilesToS3 } from '../common/utils/s3.utils';
 import { geocodeAddress } from '../common/utils/geocoding.utils';
-
-const prisma = new PrismaClient();
+import { PrismaService } from '../common/prisma.service';
 
 export interface PropertyQueryParams {
   favoriteIds?: string;
@@ -80,11 +78,13 @@ export interface UpdatePropertyDto {
 export class PropertyService {
   private readonly logger = new Logger(PropertyService.name);
 
+  constructor(private readonly prisma: PrismaService) {}
+
   async getAllProperties(queryParams?: PropertyQueryParams): Promise<any[]> {
     try {
       if (!queryParams || Object.keys(queryParams).length === 0) {
         // Simple query without filters
-        const properties = await prisma.property.findMany({
+        const properties = await this.prisma.property.findMany({
           include: {
             location: true,
             manager: true,
@@ -219,7 +219,7 @@ export class PropertyService {
         ORDER BY p."postedDate" DESC
       `;
 
-      const properties = await prisma.$queryRaw(completeQuery);
+      const properties = await this.prisma.$queryRaw(completeQuery);
       return properties as any[];
     } catch (error) {
       this.logger.error('Failed to fetch all properties', error.stack);
@@ -229,7 +229,7 @@ export class PropertyService {
 
   async getPropertyById(id: number): Promise<any> {
     try {
-      const property = await prisma.property.findUnique({
+      const property = await this.prisma.property.findUnique({
         where: { id },
         include: {
           location: true,
@@ -244,7 +244,7 @@ export class PropertyService {
       }
 
       // Extract coordinates from PostGIS geometry
-      const coordinates: { coordinates: string }[] = await prisma.$queryRaw`
+      const coordinates: { coordinates: string }[] = await this.prisma.$queryRaw`
         SELECT ST_AsText(coordinates) as coordinates 
         FROM "Location" 
         WHERE id = ${property.location.id}
@@ -298,7 +298,7 @@ export class PropertyService {
       );
 
       // Create location with PostGIS coordinates
-      const [location] = await prisma.$queryRaw<Location[]>`
+      const [location] = await this.prisma.$queryRaw<Location[]>`
         INSERT INTO "Location" (address, city, state, country, "postalCode", coordinates)
         VALUES (${data.address}, ${data.city}, ${data.state}, ${data.country}, ${data.postalCode}, ST_SetSRID(ST_MakePoint(${longitude}, ${latitude}), 4326))
         RETURNING id, address, city, state, country, "postalCode", ST_AsText(coordinates) as coordinates
@@ -316,7 +316,7 @@ export class PropertyService {
           : data.highlights;
 
       // Create property
-      const newProperty = await prisma.property.create({
+      const newProperty = await this.prisma.property.create({
         data: {
           name: data.name,
           description: data.description,
@@ -392,7 +392,7 @@ export class PropertyService {
         updatedPhotoUrls = [...existingProperty.photoUrls, ...newPhotoUrls];
       }
 
-      const property = await prisma.property.update({
+      const property = await this.prisma.property.update({
         where: { id },
         data: {
           ...(data.name && { name: data.name }),
@@ -451,7 +451,7 @@ export class PropertyService {
       // First check if property exists
       await this.getPropertyById(id);
 
-      const property = await prisma.property.delete({
+      const property = await this.prisma.property.delete({
         where: { id },
       });
 

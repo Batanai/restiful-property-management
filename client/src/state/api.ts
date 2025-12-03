@@ -11,18 +11,32 @@ import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 import { fetchAuthSession, getCurrentUser } from "aws-amplify/auth";
 import { FiltersState } from ".";
 
+const baseQuery = fetchBaseQuery({
+  baseUrl: process.env.NEXT_PUBLIC_API_BASE_URL,
+  prepareHeaders: async (headers) => {
+    const session = await fetchAuthSession();
+    const { idToken } = session.tokens ?? {};
+    if (idToken) {
+      headers.set("Authorization", `Bearer ${idToken}`);
+    }
+    return headers;
+  },
+});
+
+// Wrapper to extract data from the response
+const baseQueryWithDataExtraction = async (args: any, api: any, extraOptions: any) => {
+  const result = await baseQuery(args, api, extraOptions);
+  
+  // Extract data field from successful responses
+  if (result.data && typeof result.data === 'object' && 'data' in result.data) {
+    return { ...result, data: (result.data as any).data };
+  }
+  
+  return result;
+};
+
 export const api = createApi({
-  baseQuery: fetchBaseQuery({
-    baseUrl: process.env.NEXT_PUBLIC_API_BASE_URL,
-    prepareHeaders: async (headers) => {
-      const session = await fetchAuthSession();
-      const { idToken } = session.tokens ?? {};
-      if (idToken) {
-        headers.set("Authorization", `Bearer ${idToken}`);
-      }
-      return headers;
-    },
-  }),
+  baseQuery: baseQueryWithDataExtraction,
   reducerPath: "api",
   tagTypes: [
     "Managers",

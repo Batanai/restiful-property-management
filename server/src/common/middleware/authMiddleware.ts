@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from "express";
-import jwt, { JwtPayload } from "jsonwebtoken";
+import * as jwt from "jsonwebtoken";
+import { JwtPayload } from "jsonwebtoken";
 
 interface DecodedToken extends JwtPayload {
   sub: string;
@@ -28,6 +29,12 @@ export const authMiddleware = (allowedRoles: string[]) => {
 
     try {
       const decoded = jwt.decode(token) as DecodedToken;
+      
+      if (!decoded || !decoded.sub) {
+        res.status(400).json({ message: "Invalid token" });
+        return;
+      }
+
       const userRole = decoded["custom:role"] || "";
       req.user = {
         id: decoded.sub,

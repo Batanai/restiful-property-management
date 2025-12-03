@@ -1,11 +1,15 @@
-import { Controller, Get, Post, Patch, Body, Param, Req, HttpStatus, NotFoundException } from '@nestjs/common';
+import { Controller, Get, Post, Put, Body, Param, Req, HttpStatus, NotFoundException } from '@nestjs/common';
 import { Request } from 'express';
 import { ManagerService, CreateManagerDto, UpdateManagerDto } from './manager.service';
 import { createUser } from '../common/utils/user.utils';
+import { PrismaService } from '../common/prisma.service';
 
-@Controller('manager')
+@Controller('managers')
 export class ManagerController {
-  constructor(private readonly managerService: ManagerService) {}
+  constructor(
+    private readonly managerService: ManagerService,
+    private readonly prisma: PrismaService,
+  ) {}
 
   @Get()
   getManagerDashboard(@Req() req: Request) {
@@ -31,6 +35,7 @@ export class ManagerController {
       // If manager not found and we have user data, create new manager
       if (error instanceof NotFoundException && createManagerDto) {
         const newManager = await createUser(
+          this.prisma,
           cognitoId,
           'manager',
           createManagerDto,
@@ -62,7 +67,7 @@ export class ManagerController {
     }
   }
 
-  @Patch(':cognitoId')
+  @Put(':cognitoId')
   async updateManager(
     @Param('cognitoId') cognitoId: string,
     @Body() updateManagerDto: UpdateManagerDto,

@@ -4,9 +4,8 @@ import {
   InternalServerErrorException,
   Logger,
 } from '@nestjs/common';
-import { PrismaClient, Application, ApplicationStatus } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import { Application, ApplicationStatus } from '@prisma/client';
+import { PrismaService } from '../common/prisma.service';
 
 export interface CreateApplicationDto {
   applicationDate: string;
@@ -32,6 +31,8 @@ export interface ApplicationQueryParams {
 export class ApplicationService {
   private readonly logger = new Logger(ApplicationService.name);
 
+  constructor(private readonly prisma: PrismaService) {}
+
   async listApplications(queryParams: ApplicationQueryParams): Promise<any[]> {
     try {
       const { userId, userType } = queryParams;
@@ -50,7 +51,7 @@ export class ApplicationService {
         }
       }
 
-      const applications = await prisma.application.findMany({
+      const applications = await this.prisma.application.findMany({
         where: whereClause,
         include: {
           property: {
@@ -65,7 +66,7 @@ export class ApplicationService {
 
       const formattedApplications = await Promise.all(
         applications.map(async (app) => {
-          const lease = await prisma.lease.findFirst({
+          const lease = await this.prisma.lease.findFirst({
             where: {
               tenant: {
                 cognitoId: app.tenantCognitoId,
@@ -103,7 +104,7 @@ export class ApplicationService {
 
   async createApplication(data: CreateApplicationDto): Promise<Application> {
     try {
-      const property = await prisma.property.findUnique({
+      const property = await this.prisma.property.findUnique({
         where: { id: data.propertyId },
         select: { pricePerMonth: true, securityDeposit: true },
       });
@@ -112,7 +113,7 @@ export class ApplicationService {
         throw new NotFoundException('Property not found');
       }
 
-      const newApplication = await prisma.$transaction(async (prisma) => {
+      const newApplication = await this.prisma.$transaction(async (prisma) => {
         // Create lease first
         const lease = await prisma.lease.create({
           data: {
@@ -178,7 +179,7 @@ export class ApplicationService {
     try {
       const { status } = data;
 
-      const application = await prisma.application.findUnique({
+      const application = await this.prisma.application.findUnique({
         where: { id },
         include: {
           property: true,
@@ -191,7 +192,7 @@ export class ApplicationService {
       }
 
       if (status === 'Approved') {
-        const newLease = await prisma.lease.create({
+        const newLease = await this.prisma.lease.create({
           data: {
             startDate: new Date(),
             endDate: new Date(
@@ -205,7 +206,7 @@ export class ApplicationService {
         });
 
         // Update the property to connect the tenant
-        await prisma.property.update({
+        await this.prisma.property.update({
           where: { id: application.propertyId },
           data: {
             tenants: {
@@ -215,20 +216,20 @@ export class ApplicationService {
         });
 
         // Update the application with the new lease ID
-        await prisma.application.update({
+        await this.prisma.application.update({
           where: { id },
           data: { status, leaseId: newLease.id },
         });
       } else {
         // Update the application status (for both "Denied" and other statuses)
-        await prisma.application.update({
+        await this.prisma.application.update({
           where: { id },
           data: { status },
         });
       }
 
       // Respond with the updated application details
-      const updatedApplication = await prisma.application.findUnique({
+      const updatedApplication = await this.prisma.application.findUnique({
         where: { id },
         include: {
           property: true,

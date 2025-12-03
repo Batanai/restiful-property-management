@@ -4,17 +4,18 @@ import {
   InternalServerErrorException,
   Logger,
 } from '@nestjs/common';
-import { PrismaClient, Lease, Payment } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import { Lease, Payment } from '@prisma/client';
+import { PrismaService } from '../common/prisma.service';
 
 @Injectable()
 export class LeaseService {
   private readonly logger = new Logger(LeaseService.name);
 
+  constructor(private readonly prisma: PrismaService) {}
+
   async getLeases(): Promise<Lease[]> {
     try {
-      const leases = await prisma.lease.findMany({
+      const leases = await this.prisma.lease.findMany({
         include: {
           tenant: true,
           property: true,
@@ -30,7 +31,7 @@ export class LeaseService {
 
   async getLeasePayments(leaseId: number): Promise<Payment[]> {
     try {
-      const payments = await prisma.payment.findMany({
+      const payments = await this.prisma.payment.findMany({
         where: { leaseId },
       });
 

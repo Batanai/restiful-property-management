@@ -1,19 +1,18 @@
 "use client";
 
-import { NAVBAR_HEIGHT } from "../lib/constants";
+import { NAVBAR_HEIGHT } from "@/lib/constants";
+import Image from "next/image";
 import Link from "next/link";
 import React from "react";
-import Image from "next/image";
 import { Button } from "./ui/button";
-import { useGetAuthUserQuery } from "../state/api";
-import { useRouter, usePathname } from "next/navigation";
+import { useGetAuthUserQuery } from "@/state/api";
+import { usePathname, useRouter } from "next/navigation";
 import { signOut } from "aws-amplify/auth";
 import { Bell, MessageCircle, Plus, Search } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "./ui/dropdown-menu";
@@ -23,14 +22,13 @@ import { SidebarTrigger } from "./ui/sidebar";
 const Navbar = () => {
   const { data: authUser } = useGetAuthUserQuery();
   const router = useRouter();
-  const pathName = usePathname();
+  const pathname = usePathname();
 
   const isDashboardPage =
-    pathName.includes("/managers") || pathName.includes("/tenants");
+    pathname.includes("/managers") || pathname.includes("/tenants");
 
   const handleSignOut = async () => {
     await signOut();
-    // router.push("/"); struggles to load window correctly so window.location works better
     window.location.href = "/";
   };
 
@@ -48,7 +46,7 @@ const Navbar = () => {
           )}
           <Link
             href="/"
-            className="cursor-pointer hover:!text-primary-500"
+            className="cursor-pointer hover:!text-primary-300"
             scroll={false}
           >
             <div className="flex items-center gap-3">
@@ -67,32 +65,34 @@ const Navbar = () => {
               </div>
             </div>
           </Link>
+          {isDashboardPage && authUser && (
+            <Button
+              variant="secondary"
+              className="md:ml-4 bg-primary-50 text-primary-700 hover:bg-secondary-500 hover:text-primary-50"
+              onClick={() =>
+                router.push(
+                  authUser.userRole?.toLowerCase() === "manager"
+                    ? "/managers/newproperty"
+                    : "/search"
+                )
+              }
+            >
+              {authUser.userRole?.toLowerCase() === "manager" ? (
+                <>
+                  <Plus className="h-4 w-4" />
+                  <span className="hidden md:block ml-2">Add New Property</span>
+                </>
+              ) : (
+                <>
+                  <Search className="h-4 w-4" />
+                  <span className="hidden md:block ml-2">
+                    Search Properties
+                  </span>
+                </>
+              )}
+            </Button>
+          )}
         </div>
-        {isDashboardPage && (
-          <Button
-            variant="secondary"
-            className="md:ml-4 bg-primary-50 text-primary-700 hover:bg-secondary-500 hover:text-primary-50"
-            onClick={() =>
-              router.push(
-                authUser?.userRole?.toLowerCase() === "manager"
-                  ? "/managers/newproperty"
-                  : "/search"
-              )
-            }
-          >
-            {authUser?.userRole?.toLowerCase() === "manager" ? (
-              <>
-                <Plus className="h-4 w-4 " />
-                <span className="hidden md:block ml-2">Add New Property</span>
-              </>
-            ) : (
-              <>
-                <Search className="h-4 w-4 " />
-                <span className="hidden md:block ml-2">Search Properties</span>
-              </>
-            )}
-          </Button>
-        )}
         {!isDashboardPage && (
           <p className="text-primary-200 hidden md:block">
             Discover your perfect rental apartment with our advanced search
@@ -101,58 +101,58 @@ const Navbar = () => {
         <div className="flex items-center gap-5">
           {authUser ? (
             <>
-              <div className="relative md:block hidden">
-                <MessageCircle className="h-6 w-6 cursor-pointer text-primary-200 hover:text-primary-400" />
+              <div className="relative hidden md:block">
+                <MessageCircle className="w-6 h-6 cursor-pointer text-primary-200 hover:text-primary-400" />
                 <span className="absolute top-0 right-0 w-2 h-2 bg-secondary-700 rounded-full"></span>
               </div>
-              <div className="relative md:block hidden">
-                <Bell className="h-6 w-6 cursor-pointer text-primary-200 hover:text-primary-400" />
+              <div className="relative hidden md:block">
+                <Bell className="w-6 h-6 cursor-pointer text-primary-200 hover:text-primary-400" />
                 <span className="absolute top-0 right-0 w-2 h-2 bg-secondary-700 rounded-full"></span>
               </div>
 
               <DropdownMenu>
                 <DropdownMenuTrigger className="flex items-center gap-2 focus:outline-none">
                   <Avatar>
-                    <AvatarImage src={authUser?.userInfo?.image} />
+                    <AvatarImage src={authUser.userInfo?.image} />
                     <AvatarFallback className="bg-primary-600">
-                      {authUser?.userRole[0].toUpperCase()}
+                      {authUser.userRole?.[0].toUpperCase()}
                     </AvatarFallback>
                   </Avatar>
                   <p className="text-primary-200 hidden md:block">
-                    {authUser?.userInfo?.name}
+                    {authUser.userInfo?.name}
                   </p>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent className="bg-white text-primary-700">
                   <DropdownMenuItem
+                    className="cursor-pointer hover:!bg-primary-700 hover:!text-primary-100 font-bold"
                     onClick={() =>
                       router.push(
-                        authUser?.userRole?.toLowerCase() === "manager"
+                        authUser.userRole?.toLowerCase() === "manager"
                           ? "/managers/properties"
                           : "/tenants/favorites",
                         { scroll: false }
                       )
                     }
-                    className="cursor-pointer hover:!bg-primary-700 hover:!text-primary-100 font-bold"
                   >
                     Go to Dashboard
                   </DropdownMenuItem>
-                  <DropdownMenuSeparator className="bg-primary-200"/>
+                  <DropdownMenuSeparator className="bg-primary-200" />
                   <DropdownMenuItem
+                    className="cursor-pointer hover:!bg-primary-700 hover:!text-primary-100"
                     onClick={() =>
                       router.push(
-                        `${authUser?.userRole?.toLowerCase()}s/settings`,
+                        `/${authUser.userRole?.toLowerCase()}s/settings`,
                         { scroll: false }
                       )
                     }
-                    className="cursor-pointer hover:!bg-primary-700 hover:!text-primary-100"
                   >
                     Settings
                   </DropdownMenuItem>
                   <DropdownMenuItem
-                    onClick={handleSignOut}
                     className="cursor-pointer hover:!bg-primary-700 hover:!text-primary-100"
+                    onClick={handleSignOut}
                   >
-                    Sign Out
+                    Sign out
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
@@ -167,7 +167,6 @@ const Navbar = () => {
                   Sign In
                 </Button>
               </Link>
-
               <Link href="/signup">
                 <Button
                   variant="secondary"

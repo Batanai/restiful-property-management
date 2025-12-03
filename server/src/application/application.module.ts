@@ -7,26 +7,27 @@ import {
 import { ApplicationController } from './application.controller';
 import { ApplicationService } from './application.service';
 import { authMiddleware } from '../common/middleware/authMiddleware';
+import { PrismaService } from '../common/prisma.service';
 
 @Module({
   controllers: [ApplicationController],
-  providers: [ApplicationService],
+  providers: [ApplicationService, PrismaService],
 })
 export class ApplicationModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
-    // POST /application - tenant only
+    // POST /applications - tenant only
     consumer
       .apply(authMiddleware(['tenant']))
-      .forRoutes({ path: 'application', method: RequestMethod.POST });
+      .forRoutes({ path: 'applications', method: RequestMethod.POST });
 
-    // PUT /application/:id/status - manager only
+    // PUT /applications/:id/status - manager only
     consumer
       .apply(authMiddleware(['manager']))
-      .forRoutes({ path: 'application/:id/status', method: RequestMethod.PUT });
+      .forRoutes({ path: 'applications/:id/status', method: RequestMethod.PUT });
 
-    // GET /application - both tenant and manager
+    // GET /applications - both tenant and manager
     consumer
       .apply(authMiddleware(['tenant', 'manager']))
-      .forRoutes({ path: 'application', method: RequestMethod.GET });
+      .forRoutes({ path: 'applications', method: RequestMethod.GET });
   }
 }

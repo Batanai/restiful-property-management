@@ -1,7 +1,7 @@
 import { Logger } from '@nestjs/common';
-import { PrismaClient, Tenant, Manager } from '@prisma/client';
+import { Tenant, Manager } from '@prisma/client';
+import { PrismaService } from '../prisma.service';
 
-const prisma = new PrismaClient();
 const logger = new Logger('UserUtils');
 
 export type UserRole = 'tenant' | 'manager';
@@ -22,6 +22,7 @@ export interface CreateUserData {
  * @returns The newly created user (Tenant or Manager)
  */
 export async function createUser(
+  prisma: PrismaService,
   cognitoId: string,
   role: UserRole,
   userData: CreateUserData,

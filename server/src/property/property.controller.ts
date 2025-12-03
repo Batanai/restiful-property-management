@@ -2,7 +2,7 @@ import {
   Controller,
   Get,
   Post,
-  Patch,
+  Put,
   Delete,
   Body,
   Param,
@@ -23,7 +23,7 @@ import {
 } from './property.service';
 import { multerConfig } from '../common/config/multer.config';
 
-@Controller('property')
+@Controller('properties')
 export class PropertyController {
   constructor(private readonly propertyService: PropertyService) {}
 
@@ -93,7 +93,7 @@ export class PropertyController {
     }
   }
 
-  @Patch(':id')
+  @Put(':id')
   @UseInterceptors(FilesInterceptor('photos', 10, multerConfig))
   async updateProperty(
     @Param('id', ParseIntPipe) id: number,

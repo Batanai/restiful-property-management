@@ -1,9 +1,8 @@
 import { Injectable, NotFoundException, InternalServerErrorException, ConflictException, Logger } from '@nestjs/common';
-import { PrismaClient, Manager } from '@prisma/client';
+import { Manager } from '@prisma/client';
 import { Prisma } from '@prisma/client';
 import { wktToGeoJSON } from '@terraformer/wkt';
-
-const prisma = new PrismaClient();
+import { PrismaService } from '../common/prisma.service';
 
 export interface CreateManagerDto {
   cognitoId: string;
@@ -22,9 +21,11 @@ export interface UpdateManagerDto {
 export class ManagerService {
   private readonly logger = new Logger(ManagerService.name);
 
+  constructor(private readonly prisma: PrismaService) {}
+
   async getManagerByCognitoId(cognitoId: string): Promise<Manager> {
     try {
-      const manager = await prisma.manager.findUnique({
+      const manager = await this.prisma.manager.findUnique({
         where: { cognitoId },
         include: {
           managedProperties: {
@@ -54,7 +55,7 @@ export class ManagerService {
 
   async createManager(data: CreateManagerDto): Promise<Manager> {
     try {
-      const manager = await prisma.manager.create({
+      const manager = await this.prisma.manager.create({
         data: {
           cognitoId: data.cognitoId,
           name: data.name,
@@ -83,7 +84,7 @@ export class ManagerService {
       // First check if manager exists
       await this.getManagerByCognitoId(cognitoId);
 
-      const manager = await prisma.manager.update({
+      const manager = await this.prisma.manager.update({
         where: { cognitoId },
         data: {
           ...(data.name && { name: data.name }),
@@ -105,7 +106,7 @@ export class ManagerService {
 
   async getManagerProperties(cognitoId: string): Promise<any[]> {
     try {
-      const properties = await prisma.property.findMany({
+      const properties = await this.prisma.property.findMany({
         where: { managerCognitoId: cognitoId },
         include: {
           location: true,
@@ -114,7 +115,7 @@ export class ManagerService {
 
       const propertiesWithFormattedLocation = await Promise.all(
         properties.map(async (property) => {
-          const coordinates: { coordinates: string }[] = await prisma.$queryRaw`
+          const coordinates: { coordinates: string }[] = await this.prisma.$queryRaw`
             SELECT ST_AsText(coordinates) as coordinates 
             FROM "Location" 
             WHERE id = ${property.location.id}

@@ -16,7 +16,7 @@ import {
   ApplicationQueryParams,
 } from './application.service';
 
-@Controller('application')
+@Controller('applications')
 export class ApplicationController {
   constructor(private readonly applicationService: ApplicationService) {}
 

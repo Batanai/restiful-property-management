@@ -1,11 +1,15 @@
-import { Controller, Get, Post, Patch, Delete, Body, Param, Req, HttpStatus, HttpCode, NotFoundException, ParseIntPipe } from '@nestjs/common';
+import { Controller, Get, Post, Put, Delete, Body, Param, Req, HttpStatus, HttpCode, NotFoundException, ParseIntPipe, BadRequestException } from '@nestjs/common';
 import { Request } from 'express';
 import { TenantService, CreateTenantDto, UpdateTenantDto } from './tenant.service';
 import { createUser } from '../common/utils/user.utils';
+import { PrismaService } from '../common/prisma.service';
 
-@Controller('tenant')
+@Controller('tenants')
 export class TenantController {
-  constructor(private readonly tenantService: TenantService) {}
+  constructor(
+    private readonly tenantService: TenantService,
+    private readonly prisma: PrismaService,
+  ) {}
 
   @Get()
   getTenantDashboard(@Req() req: Request) {
@@ -31,6 +35,7 @@ export class TenantController {
       // If tenant not found and we have user data, create new tenant
       if (error instanceof NotFoundException && createTenantDto) {
         const newTenant = await createUser(
+          this.prisma,
           cognitoId,
           'tenant',
           createTenantDto,
@@ -62,7 +67,7 @@ export class TenantController {
     }
   }
 
-  @Patch(':cognitoId')
+  @Put(':cognitoId')
   async updateTenant(
     @Param('cognitoId') cognitoId: string,
     @Body() updateTenantDto: UpdateTenantDto,
@@ -80,7 +85,7 @@ export class TenantController {
     }
   }
 
-  @Get(':cognitoId/residences')
+  @Get(':cognitoId/current-residences')
   async getCurrentResidences(@Param('cognitoId') cognitoId: string) {
     try {
       const residences = await this.tenantService.getCurrentResidences(cognitoId);
@@ -98,9 +103,14 @@ export class TenantController {
   @Post(':cognitoId/favorites/:propertyId')
   async addFavoriteProperty(
     @Param('cognitoId') cognitoId: string,
-    @Param('propertyId', ParseIntPipe) propertyId: number,
+    @Param('propertyId') propertyIdStr: string,
   ) {
     try {
+      const propertyId = parseInt(propertyIdStr, 10);
+      if (isNaN(propertyId)) {
+        throw new BadRequestException(`Invalid propertyId: ${propertyIdStr}`);
+      }
+
       const tenant = await this.tenantService.addFavoriteProperty(cognitoId, propertyId);
       return {
         status: HttpStatus.OK,
@@ -116,9 +126,14 @@ export class TenantController {
   @Delete(':cognitoId/favorites/:propertyId')
   async removeFavoriteProperty(
     @Param('cognitoId') cognitoId: string,
-    @Param('propertyId', ParseIntPipe) propertyId: number,
+    @Param('propertyId') propertyIdStr: string,
   ) {
     try {
+      const propertyId = parseInt(propertyIdStr, 10);
+      if (isNaN(propertyId)) {
+        throw new BadRequestException(`Invalid propertyId: ${propertyIdStr}`);
+      }
+
       const tenant = await this.tenantService.removeFavoriteProperty(cognitoId, propertyId);
       return {
         status: HttpStatus.OK,
