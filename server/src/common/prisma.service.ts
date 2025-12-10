@@ -8,6 +8,9 @@ export class PrismaService implements OnModuleInit, OnModuleDestroy {
   private prisma: PrismaClient;
 
   constructor() {
+    // Disable TLS certificate verification for self-signed certificates
+    process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
+    
     const connectionString = process.env.DATABASE_URL;
     const pool = new Pool({ 
       connectionString,
